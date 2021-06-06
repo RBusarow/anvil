@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtClassLiteralExpression
 import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtCollectionLiteralExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtFunctionType
@@ -35,6 +36,7 @@ import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentName
 import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
+import org.jetbrains.kotlin.utils.addToStdlib.cast
 import kotlin.reflect.KClass
 
 private val kotlinAnnotations = listOf(jvmSuppressWildcardsFqName, publishedApiFqName)
@@ -144,6 +146,32 @@ public fun KtClassOrObject.scope(
     }
 }
 
+@ExperimentalAnvilApi
+public fun KtClassOrObject.exclude(
+  annotationFqName: FqName,
+  module: ModuleDescriptor
+): List<ClassDescriptor>? {
+  TODO()
+  // val annotationEntry = requireAnnotation(annotationFqName, module)
+
+/*  val index = Class.forName(annotationFqName.asString())
+    .kotlin
+
+
+    annotationEntry
+    .valueArguments
+    .filterIsInstance<KtValueArgument>()
+    .indexOfFirst { it.name == "exclude" }*/
+
+  // val index = 3
+
+  // return  annotationEntry
+  //   .findAnnotationArgument<KtCollectionLiteralExpression>(name = "exclude", index = index)
+  //   ?.children
+  //   ?.value
+  //   ?.map { it.argumentType(module).classDescriptorForType() }
+}
+
 /**
  * Finds the argument in the given annotation. [name] refers to the parameter name
  * in the annotation and [index] to the position of the argument, e.g. if you look for the scope in
@@ -159,11 +187,24 @@ public inline fun <reified T> KtAnnotationEntry.findAnnotationArgument(
     .asSequence()
     .filterIsInstance<KtValueArgument>()
 
+  val msgs = mutableListOf<String>()
+
+  println(index)
+
   // First check if the is any named parameter. Named parameters allow a different order of
   // arguments.
   annotationValues
     .firstNotNullOfOrNull { valueArgument ->
+
+      msgs.add("valueArgument --> ${valueArgument.text}")
+
       val children = valueArgument.children
+
+      if (children[0].cast<KtValueArgumentName>().asName.asString() == "exclude") {
+        msgs.add("\n children--> ${children.joinToString { it.children.joinToString { grand -> grand.text } }}")
+      }
+
+
       if (children.size == 2 && children[0] is KtValueArgumentName &&
         (children[0] as KtValueArgumentName).asName.asString() == name &&
         children[1] is T
@@ -175,13 +216,13 @@ public inline fun <reified T> KtAnnotationEntry.findAnnotationArgument(
     }
     ?.let { return it }
 
-  // If there is no named argument, then take the first argument, which must be a class literal
-  // expression, e.g. @ContributesTo(Unit::class)
-  return annotationValues
-    .elementAtOrNull(index)
-    ?.let { valueArgument ->
-      valueArgument.children.firstOrNull() as? T
-    }
+   // If there is no named argument, then take the first argument, which must be a class literal
+   // expression, e.g. @ContributesTo(Unit::class)
+   return annotationValues
+     .elementAtOrNull(index)
+     ?.let { valueArgument ->
+       valueArgument.children.firstOrNull() as? T
+     }
 }
 
 @ExperimentalAnvilApi
