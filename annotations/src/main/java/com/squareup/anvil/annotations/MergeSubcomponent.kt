@@ -49,3 +49,6 @@ public annotation class MergeSubcomponent(
    */
   val exclude: Array<KClass<*>> = []
 )
+
+@MergeSubcomponent(Unit::class, exclude = [Unit::class, String::class])
+public interface Foo

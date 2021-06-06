@@ -3,6 +3,10 @@
 package com.squareup.anvil.compiler.internal
 
 import com.squareup.anvil.annotations.ExperimentalAnvilApi
+import com.squareup.anvil.annotations.MergeComponent
+import com.squareup.anvil.annotations.MergeSubcomponent
+import com.squareup.anvil.annotations.compat.MergeInterfaces
+import com.squareup.anvil.annotations.compat.MergeModules
 import com.squareup.anvil.compiler.api.AnvilCompilationException
 import com.squareup.kotlinpoet.TypeVariableName
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -36,7 +40,6 @@ import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentName
 import org.jetbrains.kotlin.psi.psiUtil.parents
 import org.jetbrains.kotlin.psi.psiUtil.parentsWithSelf
-import org.jetbrains.kotlin.utils.addToStdlib.cast
 import kotlin.reflect.KClass
 
 private val kotlinAnnotations = listOf(jvmSuppressWildcardsFqName, publishedApiFqName)
@@ -137,7 +140,7 @@ public fun KtClassOrObject.scope(
     .let { classLiteralExpression ->
       if (classLiteralExpression == null) {
         throw AnvilCompilationException(
-          "The first argument for $annotationFqName must be a class literal: $text",
+          "Couldn't find scope for $annotationFqName.",
           element = this
         )
       }
@@ -149,27 +152,30 @@ public fun KtClassOrObject.scope(
 @ExperimentalAnvilApi
 public fun KtClassOrObject.exclude(
   annotationFqName: FqName,
-  module: ModuleDescriptor
-): List<ClassDescriptor>? {
-  TODO()
-  // val annotationEntry = requireAnnotation(annotationFqName, module)
+  module: ModuleDescriptor,
+  index: Int = annotationFqName.requireExcludeArgumentIndex()
+): List<FqName>? {
 
-/*  val index = Class.forName(annotationFqName.asString())
-    .kotlin
+  val annotationEntry = requireAnnotation(annotationFqName, module)
 
+  return annotationEntry
+    .findAnnotationArgument<KtCollectionLiteralExpression>(name = "exclude", index = index)
+    ?.children
+    ?.filterIsInstance<KtClassLiteralExpression>()
+    ?.mapNotNull { it.fqNameOrNull(module) }
+}
 
-    annotationEntry
-    .valueArguments
-    .filterIsInstance<KtValueArgument>()
-    .indexOfFirst { it.name == "exclude" }*/
-
-  // val index = 3
-
-  // return  annotationEntry
-  //   .findAnnotationArgument<KtCollectionLiteralExpression>(name = "exclude", index = index)
-  //   ?.children
-  //   ?.value
-  //   ?.map { it.argumentType(module).classDescriptorForType() }
+private fun FqName.requireExcludeArgumentIndex(): Int {
+  return when (this.asString()) {
+    MergeComponent::class.qualifiedName -> 3
+    MergeInterfaces::class.qualifiedName -> 1
+    MergeModules::class.qualifiedName -> 3
+    MergeSubcomponent::class.qualifiedName -> 2
+    else -> throw AnvilCompilationException(
+      "Unable to find the \"exclude\" parameter index for type `${asString()}`.  " +
+        "If this is a custom type, specify the index manually."
+    )
+  }
 }
 
 /**
@@ -187,24 +193,11 @@ public inline fun <reified T> KtAnnotationEntry.findAnnotationArgument(
     .asSequence()
     .filterIsInstance<KtValueArgument>()
 
-  val msgs = mutableListOf<String>()
-
-  println(index)
-
   // First check if the is any named parameter. Named parameters allow a different order of
   // arguments.
   annotationValues
     .firstNotNullOfOrNull { valueArgument ->
-
-      msgs.add("valueArgument --> ${valueArgument.text}")
-
       val children = valueArgument.children
-
-      if (children[0].cast<KtValueArgumentName>().asName.asString() == "exclude") {
-        msgs.add("\n children--> ${children.joinToString { it.children.joinToString { grand -> grand.text } }}")
-      }
-
-
       if (children.size == 2 && children[0] is KtValueArgumentName &&
         (children[0] as KtValueArgumentName).asName.asString() == name &&
         children[1] is T
@@ -216,13 +209,13 @@ public inline fun <reified T> KtAnnotationEntry.findAnnotationArgument(
     }
     ?.let { return it }
 
-   // If there is no named argument, then take the first argument, which must be a class literal
-   // expression, e.g. @ContributesTo(Unit::class)
-   return annotationValues
-     .elementAtOrNull(index)
-     ?.let { valueArgument ->
-       valueArgument.children.firstOrNull() as? T
-     }
+  // If there is no named argument, then take the first argument, which must be a class literal
+  // expression, e.g. @ContributesTo(Unit::class)
+  return annotationValues
+    .elementAtOrNull(index)
+    ?.let { valueArgument ->
+      valueArgument.children.firstOrNull() as? T
+    }
 }
 
 @ExperimentalAnvilApi

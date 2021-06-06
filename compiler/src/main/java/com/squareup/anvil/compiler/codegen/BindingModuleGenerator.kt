@@ -88,7 +88,7 @@ internal class BindingModuleGenerator(
   private val mergedScopes = mutableMapOf<FqName, MutableList<Pair<File, KtClassOrObject>>>()
     .withDefault { mutableListOf() }
 
-  private val excludedTypesForScope = mutableMapOf<FqName, List<ClassDescriptor>>()
+  private val excludedTypesForScope = mutableMapOf<FqName, List<FqName>>()
 
   private val contributedBindingClasses = mutableListOf<FqName>()
   private val contributedMultibindingClasses = mutableListOf<FqName>()
@@ -175,7 +175,7 @@ internal class BindingModuleGenerator(
   ): Collection<GeneratedFile> {
     return mergedScopes.flatMap { (scope, daggerModuleFiles) ->
       // Precompute this list once per scope since it expensive.
-      val excludedNames = excludedTypesForScope[scope].orEmpty().map { it.fqNameSafe }
+      val excludedNames = excludedTypesForScope[scope].orEmpty()
 
       // Contributed Dagger modules can replace other Dagger modules but also contributed bindings.
       // If a binding is replaced, then we must not generate the binding method.
@@ -198,7 +198,7 @@ internal class BindingModuleGenerator(
             )
             .filter { it.annotationOrNull(daggerModuleFqName) != null }
             // Ignore replaced bindings specified by excluded modules for this scope.
-            .filter { it !in excludedTypesForScope[scope].orEmpty() }
+            .filter { it.fqNameSafe !in excludedTypesForScope[scope].orEmpty() }
             .flatMap {
               it.annotationOrNull(contributesToFqName, scope)
                 ?.replaces(module)
@@ -238,10 +238,8 @@ internal class BindingModuleGenerator(
 
         return (contributedBindingsThisModule + contributedBindingsDependencies)
           .minus(replacedBindings)
-          .filterNot {
-            it.fqNameSafe in bindingsReplacedInDaggerModules
-          }
-          .minus(excludedTypesForScope[scope].orEmpty())
+          .filterNot { it.fqNameSafe in bindingsReplacedInDaggerModules }
+          .filterNot { it.fqNameSafe in excludedTypesForScope[scope].orEmpty() }
           .filter {
             val annotation = it.annotationOrNull(annotationFqName)
             annotation != null && scope == annotation.scope(module).fqNameSafe
