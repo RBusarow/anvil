@@ -3,10 +3,6 @@
 package com.squareup.anvil.compiler.internal
 
 import com.squareup.anvil.annotations.ExperimentalAnvilApi
-import com.squareup.anvil.annotations.MergeComponent
-import com.squareup.anvil.annotations.MergeSubcomponent
-import com.squareup.anvil.annotations.compat.MergeInterfaces
-import com.squareup.anvil.annotations.compat.MergeModules
 import com.squareup.anvil.compiler.api.AnvilCompilationException
 import com.squareup.kotlinpoet.TypeVariableName
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -156,10 +152,7 @@ public fun KtClassOrObject.exclude(
   module: ModuleDescriptor,
   index: Int = annotationFqName.requireExcludeArgumentIndex()
 ): List<FqName>? {
-
-  val annotationEntry = requireAnnotation(annotationFqName, module)
-
-  return annotationEntry
+  return requireAnnotation(annotationFqName, module)
     .findAnnotationArgument<KtCollectionLiteralExpression>(name = "exclude", index = index)
     ?.children
     ?.filterIsInstance<KtClassLiteralExpression>()
@@ -167,16 +160,17 @@ public fun KtClassOrObject.exclude(
 }
 
 private fun FqName.requireExcludeArgumentIndex(): Int {
-  return when (this.asString()) {
-    MergeComponent::class.qualifiedName -> 3
-    MergeInterfaces::class.qualifiedName -> 1
-    MergeModules::class.qualifiedName -> 3
-    MergeSubcomponent::class.qualifiedName -> 2
-    else -> throw AnvilCompilationException(
-      "Unable to find the \"exclude\" parameter index for type `${asString()}`.  " +
-        "If this is a custom type, specify the index manually."
-    )
-  }
+  return Class.forName(asString())
+    .declaredMethods
+    .indexOfFirst { it.name == "exclude" }
+    .also {
+      if (it == -1) {
+        throw AnvilCompilationException(
+          "Unable to find the \"exclude\" parameter index for type `${asString()}`.  " +
+            "If this is a custom type, specify the index manually."
+        )
+      }
+    }
 }
 
 /**
