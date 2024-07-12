@@ -1,6 +1,5 @@
 package com.squareup.anvil.plugin
 
-import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
@@ -214,18 +213,18 @@ public abstract class AnvilExtension @Inject constructor(
         }
     }
 
-    project.extensions.configure(KspExtension::class.java) { ksp ->
-      // Do not convert this to a lambda.
-      // It will leak the AnvilExtension instance and break configuration caching.
-      ksp.arg(
-        commandLineArgumentProvider(
-          "generate-dagger-factories" to generateDaggerFactories,
-          "generate-dagger-factories-only" to generateDaggerFactoriesOnly,
-          "disable-component-merging" to disableComponentMerging,
-          "will-have-dagger-factories" to willHaveDaggerFactories,
-        ),
-      )
-    }
+    // project.extensions.configure(com.google.devtools.ksp.gradle.KspExtension::class.java) { ksp ->
+    //   // Do not convert this to a lambda.
+    //   // It will leak the AnvilExtension instance and break configuration caching.
+    //   ksp.arg(
+    //     commandLineArgumentProvider(
+    //       "generate-dagger-factories" to generateDaggerFactories,
+    //       "generate-dagger-factories-only" to generateDaggerFactoriesOnly,
+    //       "disable-component-merging" to disableComponentMerging,
+    //       "will-have-dagger-factories" to willHaveDaggerFactories,
+    //     ),
+    //   )
+    // }
   }
 
   private fun addKspDep(configurationName: String) {
