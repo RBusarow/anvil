@@ -202,15 +202,16 @@ public abstract class AnvilExtension @Inject constructor(
     val willHaveDaggerFactories = generateDaggerFactories.map { anvilGenerated ->
       // If Anvil is creating factories due to `generateDaggerFactories`, then we're done.
       // Otherwise, we have to check if the Dagger compiler dependency is in KSP's classpath.
-      anvilGenerated || kExtension.targets
-        .filter { it.isSupportedType() }
-        .any { target ->
-          target.compilations.any { c ->
-            // If using Anvil with KSP, Dagger factory generation can come from either KSP or KAPT.
-            c.kspConfigOrNull(project)?.hasDaggerCompilerDependency() == true ||
-              c.kaptConfigOrNull(project)?.hasDaggerCompilerDependency() == true
+      anvilGenerated ||
+        kExtension.targets
+          .filter { it.isSupportedType() }
+          .any { target ->
+            target.compilations.any { c ->
+              // If using Anvil with KSP, Dagger factory generation can come from either KSP or KAPT.
+              c.kspConfigOrNull(project)?.hasDaggerCompilerDependency() == true ||
+                c.kaptConfigOrNull(project)?.hasDaggerCompilerDependency() == true
+            }
           }
-        }
     }
 
     // project.extensions.configure(com.google.devtools.ksp.gradle.KspExtension::class.java) { ksp ->
