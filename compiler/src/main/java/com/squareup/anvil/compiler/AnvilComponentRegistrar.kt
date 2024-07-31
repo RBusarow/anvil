@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.com.intellij.mock.MockProject
 import org.jetbrains.kotlin.com.intellij.openapi.extensions.LoadingOrder
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
 import org.jetbrains.kotlin.resolve.jvm.extensions.AnalysisHandlerExtension
 import java.util.ServiceLoader
 import kotlin.LazyThreadSafetyMode.NONE
@@ -72,13 +71,13 @@ public class AnvilComponentRegistrar : ComponentRegistrar {
       return
     }
 
-    project.extensionArea.getExtensionPoint(FirSupertypeGenerationExtension.NAME)
-      // .registerExtensionPoint(FirSupertypeGenerationExtension.Factory { FirSupertypeGenerationExtension(it) }
+    // project.extensionArea.getExtensionPoint(FirSupertypeGenerationExtension.NAME)
+    // .registerExtensionPoint(FirSupertypeGenerationExtension.Factory { FirSupertypeGenerationExtension(it) }
 
-    project.extensionArea
-      .getExtensionPoint(FirSupertypeGenerationExtension.NAME)
+    // project.extensionArea
+    //   .getExtensionPoint(FirSupertypeGenerationExtension.NAME)
 
-      // .registerExtensionPoint(FirContributionMerger(TODO()))
+    // .registerExtensionPoint(FirContributionMerger(TODO()))
 
     val sourceGenFolder = configuration.getNotNull(srcGenDirKey)
     val cacheDir = configuration.getNotNull(anvilCacheDirKey)
