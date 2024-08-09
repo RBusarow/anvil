@@ -34,6 +34,7 @@ interface CompilationEnvironment : HasWorkingDir {
     disableComponentMerging: Boolean = false,
     codeGenerators: List<CodeGenerator> = emptyList(),
     allWarningsAsErrors: Boolean = true,
+    useK2: Boolean = true,
     mode: AnvilCompilationMode = modeDefault(codeGenerators),
     workingDir: File? = this@CompilationEnvironment.workingDir,
     expectExitCode: KotlinCompilation.ExitCode = KotlinCompilation.ExitCode.OK,

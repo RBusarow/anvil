@@ -5,6 +5,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.squareup.anvil.annotations.ExperimentalAnvilApi
 import com.squareup.anvil.compiler.AnvilCommandLineProcessor
+import com.squareup.anvil.compiler.AnvilCompilerPluginRegistrar
 import com.squareup.anvil.compiler.AnvilComponentRegistrar
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Embedded
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Ksp
@@ -13,9 +14,8 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.addPreviousResultToClasspath
-import com.tschuchort.compiletesting.kspArgs
-import com.tschuchort.compiletesting.kspWithCompilation
-import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.configureKsp
+import com.tschuchort.compiletesting.kspProcessorOptions
 import dagger.internal.codegen.ComponentProcessor
 import dagger.internal.codegen.KspComponentProcessor
 import org.intellij.lang.annotations.Language
@@ -60,9 +60,11 @@ public class AnvilCompilation internal constructor(
       val anvilComponentRegistrar = AnvilComponentRegistrar()
       // Deprecation tracked in https://github.com/square/anvil/issues/672
       @Suppress("DEPRECATION")
-      componentRegistrars = listOf(anvilComponentRegistrar)
+      componentRegistrars += anvilComponentRegistrar
+      compilerPluginRegistrars += AnvilCompilerPluginRegistrar()
       if (enableDaggerAnnotationProcessor) {
         annotationProcessors = listOf(ComponentProcessor(), AutoAnnotationProcessor())
+        useKapt4 = true
       }
 
       val anvilCommandLineProcessor = AnvilCommandLineProcessor()
@@ -96,6 +98,9 @@ public class AnvilCompilation internal constructor(
 
       when (mode) {
         is Embedded -> {
+          // println("Lowering language version to 1.9 to support embedded mode")
+          // languageVersion = "1.9"
+          // apiVersion = "1.9"
           anvilComponentRegistrar.addCodeGenerators(mode.codeGenerators)
           pluginOptions +=
             listOf(
@@ -138,25 +143,33 @@ public class AnvilCompilation internal constructor(
         }
 
         is Ksp -> {
-          symbolProcessorProviders += buildList {
-            addAll(
-              ServiceLoader.load(
-                SymbolProcessorProvider::class.java,
-                SymbolProcessorProvider::class.java.classLoader,
+          configureKsp(true) {
+            symbolProcessorProviders += buildList {
+              addAll(
+                ServiceLoader.load(
+                  SymbolProcessorProvider::class.java,
+                  SymbolProcessorProvider::class.java.classLoader,
+                )
+                  // TODO for now, we don't want to run the dagger KSP processor while we're testing
+                  //  KSP. This will change when we start supporting dagger-KSP, at which point we can
+                  //  change this filter to be based on https://github.com/square/anvil/pull/713
+                  .filterNot { it is KspComponentProcessor.Provider },
               )
-                // TODO for now, we don't want to run the dagger KSP processor while we're testing
-                //  KSP. This will change when we start supporting dagger-KSP, at which point we can
-                //  change this filter to be based on https://github.com/square/anvil/pull/713
-                .filterNot { it is KspComponentProcessor.Provider },
-            )
-            addAll(mode.symbolProcessorProviders)
+              addAll(mode.symbolProcessorProviders)
+            }
+
+            // if (!mode.useKSP2) {
+            //   // Run KSP embedded directly within this kotlinc invocation
+            //   // This doesn't exist in KSP2
+            //   kspWithCompilation = true
+            // }
+
+            kspProcessorOptions["will-have-dagger-factories"] = generateDaggerFactories.toString()
+            kspProcessorOptions["generate-dagger-factories"] = generateDaggerFactories.toString()
+            kspProcessorOptions["generate-dagger-factories-only"] =
+              generateDaggerFactoriesOnly.toString()
+            kspProcessorOptions["disable-component-merging"] = disableComponentMerging.toString()
           }
-          // Run KSP embedded directly within this kotlinc invocation
-          kspWithCompilation = true
-          kspArgs["will-have-dagger-factories"] = generateDaggerFactories.toString()
-          kspArgs["generate-dagger-factories"] = generateDaggerFactories.toString()
-          kspArgs["generate-dagger-factories-only"] = generateDaggerFactoriesOnly.toString()
-          kspArgs["disable-component-merging"] = disableComponentMerging.toString()
         }
       }
 
@@ -301,6 +314,7 @@ public fun compileAnvil(
   generateDaggerFactoriesOnly: Boolean = false,
   disableComponentMerging: Boolean = false,
   allWarningsAsErrors: Boolean = true,
+  useK2: Boolean = true,
   messageOutputStream: OutputStream = System.out,
   workingDir: File? = null,
   enableExperimentalAnvilApis: Boolean = true,
@@ -323,6 +337,8 @@ public fun compileAnvil(
         if (moduleName != null) {
           this.moduleName = moduleName
         }
+        supportsK2 = useK2
+        useKapt4 = true
       }
 
       if (jvmTarget != null) {

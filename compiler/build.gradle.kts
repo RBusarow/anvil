@@ -40,6 +40,7 @@ dependencies {
   implementation(platform(libs.kotlin.bom))
   implementation(libs.dagger2)
   implementation(libs.jsr250)
+  implementation(libs.kotlin.annotationProcessingEmbeddable)
   implementation(libs.kotlinpoet)
   implementation(libs.kotlinpoet.ksp)
 
