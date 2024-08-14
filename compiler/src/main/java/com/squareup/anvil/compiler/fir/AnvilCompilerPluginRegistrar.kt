@@ -14,7 +14,7 @@ public class AnvilCompilerPluginRegistrar : CompilerPluginRegistrar() {
   override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
     if (!configuration.getBoolean(CommonConfigurationKeys.USE_FIR)) return
 
-    FirExtensionRegistrarAdapter.registerExtension(AnvilFirPluginExtensionRegistrar())
+    FirExtensionRegistrarAdapter.registerExtension(AnvilFirExtensionRegistrar())
 
     // throw AnvilCompilationException(
     //   registeredExtensions.renderAsDataClassToString()
