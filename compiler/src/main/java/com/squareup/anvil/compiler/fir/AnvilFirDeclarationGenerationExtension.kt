@@ -1,21 +1,31 @@
 package com.squareup.anvil.compiler.fir
 
+import com.squareup.anvil.compiler.fir.internal.AnvilPredicates
+import com.squareup.anvil.compiler.fir.internal.Names
+import com.squareup.anvil.compiler.fir.internal.classId
+import com.squareup.anvil.compiler.fir.internal.factoryDelegate
+import com.squareup.anvil.compiler.fir.internal.isFactoryDelegate
 import com.squareup.anvil.compiler.mapToSet
 import org.jetbrains.kotlin.GeneratedDeclarationKey
+import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataKey
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataRegistry
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.impl.FirResolvedDeclarationStatusImpl
+import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotation
+import org.jetbrains.kotlin.fir.expressions.impl.FirEmptyAnnotationArgumentMapping
 import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.MemberGenerationContext
-import org.jetbrains.kotlin.fir.extensions.predicate.LookupPredicate
 import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
-import org.jetbrains.kotlin.fir.lightTree.converter.nameAsSafeName
+import org.jetbrains.kotlin.fir.plugin.ClassBuildingContext
 import org.jetbrains.kotlin.fir.plugin.createConstructor
 import org.jetbrains.kotlin.fir.plugin.createMemberFunction
 import org.jetbrains.kotlin.fir.plugin.createTopLevelClass
+import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassLikeSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
@@ -23,6 +33,7 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.constructStarProjectedType
+import org.jetbrains.kotlin.fir.types.toFirResolvedTypeRef
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -30,80 +41,85 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.name.SpecialNames
 
 @OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
-public class AnvilFirDeclarationGenerationExtension(session: FirSession) :
+public class AnvilFactoryDelegateDeclarationGenerationExtension(session: FirSession) :
   FirDeclarationGenerationExtension(session) {
-  public companion object {
-    private val FOO_PACKAGE = FqName.topLevel(Name.identifier("foo"))
-    private val THING_FACTORY = ClassId(FOO_PACKAGE, Name.identifier("Thing_Factory2"))
-    private val GENERATED_CLASS_ID = THING_FACTORY
-
-    private val PREDICATE = LookupPredicate.create {
-      annotated(FOO_PACKAGE.child("Freddy".nameAsSafeName()))
-      // hasAnnotated(FOO_PACKAGE.child("Freddy".nameAsSafeName()))
-    }
-  }
 
   public object Key : GeneratedDeclarationKey() {
     override fun toString(): String {
-      return "${AnvilFirDeclarationGenerationExtension::class.simpleName}-Key"
+      return "${AnvilFactoryDelegateDeclarationGenerationExtension::class.simpleName}-Key"
     }
   }
 
   private val predicateBasedProvider = session.predicateBasedProvider
   private val matchedClasses by lazy {
-    predicateBasedProvider.getSymbolsByPredicate(PREDICATE)
+    predicateBasedProvider.getSymbolsByPredicate(AnvilPredicates.hasFreddyAnnotation)
       .filterIsInstance<FirConstructorSymbol>()
-      // TODO <Rick> delete me
-      .also {
-        if (it.isNotEmpty()) {
-          error(
-            """
-            |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            | -- matchedClasses
-            |${
-              it.joinToString("\n") { c ->
-                "${c.callableId}  --  ${c.callableId.classId}"
-              }
-            }
-            |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            """.trimMargin(),
-          )
-        }
-      }
-    // .filterIsInstance<FirRegularClassSymbol>()
   }
+
   private val classIdsForMatchedClasses: Set<ClassId> by lazy {
-    matchedClasses
-      .mapToSet { it.callableId.classId!! }
+    matchedClasses.mapToSet { it.callableId.classId!! }
   }
 
   override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
-    if (classId != GENERATED_CLASS_ID) return null
     if (matchedClasses.isEmpty()) return null
-    return createTopLevelClass(classId, Key).symbol
+
+    if (!classId.isFactoryDelegate()) return null
+
+    return createTopLevelClass(classId, Key) {
+      val clazz: ClassBuildingContext = this
+      clazz.visibility = Visibilities.Private
+      clazz.modality = Modality.ABSTRACT
+      clazz.status {
+        val s: FirResolvedDeclarationStatusImpl = this
+      }
+    }
+      .symbol
   }
 
   override fun getCallableNamesForClass(
     classSymbol: FirClassSymbol<*>,
     context: MemberGenerationContext,
   ): Set<Name> {
-    return when (classSymbol.classId) {
-      GENERATED_CLASS_ID -> setOf(SpecialNames.INIT)
-      else -> error("Unexpected classId: ${classSymbol.classId}")
-      // else -> emptySet()
+
+    if (context.owner.classId == Names.testComponent.classId()) {
+      // error("stop")
     }
+
+    if (!classSymbol.classId.isFactoryDelegate()) return emptySet()
+
+    return setOf(SpecialNames.INIT)
   }
 
   override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
-    return emptyList()
+
     val classId = context.owner.classId
-    if (classId != GENERATED_CLASS_ID && classId !in classIdsForMatchedClasses) return emptyList()
+
+    if (!classId.isFactoryDelegate()) return emptyList()
+
     return listOf(
-      createConstructor(context.owner, Key, isPrimary = true) {
-        val c = this
-        // c.visibility = Visibilities.Private
-        c.valueParameter(Name.identifier("thing"), session.builtinTypes.stringType.type)
-      }.symbol,
+      createConstructor(
+        owner = context.owner,
+        key = Key,
+        isPrimary = true,
+        generateDelegatedNoArgConstructorCall = true,
+      ) {
+        valueParameter(Name.identifier("thing"), session.builtinTypes.stringType.type)
+      }
+        .apply {
+          replaceAnnotations(
+            listOf(
+              buildAnnotation {
+                annotationTypeRef = session.symbolProvider
+                  .getClassLikeSymbolByClassId(Names.inject.classId())
+                  .let { it as FirRegularClassSymbol }
+                  .defaultType()
+                  .toFirResolvedTypeRef()
+                argumentMapping = FirEmptyAnnotationArgumentMapping
+              },
+            ),
+          )
+        }
+        .symbol,
     )
   }
 
@@ -127,15 +143,13 @@ public class AnvilFirDeclarationGenerationExtension(session: FirSession) :
   }
 
   override fun getTopLevelClassIds(): Set<ClassId> {
-    return if (matchedClasses.isEmpty()) emptySet() else setOf(GENERATED_CLASS_ID)
+    return classIdsForMatchedClasses.mapToSet { it.factoryDelegate() }
   }
 
-  override fun hasPackage(packageFqName: FqName): Boolean {
-    return packageFqName == FOO_PACKAGE
-  }
+  override fun hasPackage(packageFqName: FqName): Boolean = packageFqName == Names.foo
 
   override fun FirDeclarationPredicateRegistrar.registerPredicates() {
-    register(PREDICATE)
+    register(AnvilPredicates.hasFreddyAnnotation)
   }
 }
 

@@ -42,6 +42,7 @@ interface CompilationEnvironment : HasWorkingDir {
   ): JvmCompilationResult = compileAnvil(
     sources = sources,
     allWarningsAsErrors = allWarningsAsErrors,
+    useK2 = useK2,
     previousCompilationResult = previousCompilationResult,
     enableDaggerAnnotationProcessor = enableDaggerAnnotationProcessor,
     generateDaggerFactories = generateDaggerFactories,

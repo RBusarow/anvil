@@ -5,8 +5,8 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.squareup.anvil.annotations.ExperimentalAnvilApi
 import com.squareup.anvil.compiler.AnvilCommandLineProcessor
-import com.squareup.anvil.compiler.AnvilCompilerPluginRegistrar
 import com.squareup.anvil.compiler.AnvilComponentRegistrar
+import com.squareup.anvil.compiler.fir.AnvilCompilerPluginRegistrar
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Embedded
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Ksp
 import com.tschuchort.compiletesting.JvmCompilationResult
@@ -66,6 +66,14 @@ public class AnvilCompilation internal constructor(
         annotationProcessors = listOf(ComponentProcessor(), AutoAnnotationProcessor())
         useKapt4 = true
       }
+
+      // inheritClassPath = false
+
+      HostEnvironment.inheritedClasspath
+        .sorted()
+        .filter { it.path.contains("jetbrains", ignoreCase = true) }
+        // TODO <Rick> delete me
+        .forEach { println(it) }
 
       val anvilCommandLineProcessor = AnvilCommandLineProcessor()
       commandLineProcessors = listOf(anvilCommandLineProcessor)
@@ -326,7 +334,7 @@ public fun compileAnvil(
   expectExitCode: KotlinCompilation.ExitCode? = null,
   block: JvmCompilationResult.() -> Unit = { },
 ): JvmCompilationResult {
-  return AnvilCompilation()
+  val c = AnvilCompilation()
     .apply {
       kotlinCompilation.apply {
         this.allWarningsAsErrors = allWarningsAsErrors
@@ -337,8 +345,12 @@ public fun compileAnvil(
         if (moduleName != null) {
           this.moduleName = moduleName
         }
+        apiVersion = "2.0"
+        languageVersion = "2.0"
         supportsK2 = useK2
-        useKapt4 = true
+        useKapt4 = useK2
+
+        verbose = false
       }
 
       if (jvmTarget != null) {
@@ -358,9 +370,12 @@ public fun compileAnvil(
       trackSourceFiles = trackSourceFiles,
       mode = mode,
     )
-    .compile(
-      *sources,
-      expectExitCode = expectExitCode,
-    )
+
+  println(c)
+
+  return c.compile(
+    *sources,
+    expectExitCode = expectExitCode,
+  )
     .also(block)
 }

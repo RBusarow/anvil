@@ -18,6 +18,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Properties
@@ -117,6 +118,8 @@ abstract class BasePlugin : Plugin<Project> {
         if (extension.explicitApi.get() && !isTestSourceSet()) {
           freeCompilerArgs.add("-Xexplicit-api=strict")
         }
+
+        languageVersion.set(KotlinVersion.KOTLIN_2_0)
 
         jvmTarget.set(JvmTarget.fromInt(target.jvmTargetInt()))
       }
