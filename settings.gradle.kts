@@ -37,3 +37,10 @@ include(":gradle-plugin")
 if (gradle.parent == null) {
   // includeBuild("build-logic/delegate")
 }
+
+includeBuild("../kotlin-compile-testing") {
+  dependencySubstitution {
+    substitute(module("dev.zacsweers.kctfork:core")).using(project(":core"))
+    substitute(module("dev.zacsweers.kctfork:ksp")).using(project(":ksp"))
+  }
+}

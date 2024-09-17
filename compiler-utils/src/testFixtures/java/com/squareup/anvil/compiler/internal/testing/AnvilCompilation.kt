@@ -5,7 +5,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.squareup.anvil.annotations.ExperimentalAnvilApi
 import com.squareup.anvil.compiler.AnvilCommandLineProcessor
-import com.squareup.anvil.compiler.AnvilComponentRegistrar
 import com.squareup.anvil.compiler.fir.AnvilCompilerPluginRegistrar
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Embedded
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Ksp
@@ -57,23 +56,12 @@ public class AnvilCompilation internal constructor(
     if (!enableAnvil) return@apply
 
     kotlinCompilation.apply {
-      val anvilComponentRegistrar = AnvilComponentRegistrar()
-      // Deprecation tracked in https://github.com/square/anvil/issues/672
-      @Suppress("DEPRECATION")
-      componentRegistrars += anvilComponentRegistrar
+
       compilerPluginRegistrars += AnvilCompilerPluginRegistrar()
-      if (enableDaggerAnnotationProcessor) {
-        annotationProcessors = listOf(ComponentProcessor(), AutoAnnotationProcessor())
-        useKapt4 = true
-      }
 
-      // inheritClassPath = false
-
-      HostEnvironment.inheritedClasspath
-        .sorted()
-        .filter { it.path.contains("jetbrains", ignoreCase = true) }
-        // TODO <Rick> delete me
-        .forEach { println(it) }
+      supportsK2 = true
+      annotationProcessors = listOf(ComponentProcessor(), AutoAnnotationProcessor())
+      useKapt4 = true
 
       val anvilCommandLineProcessor = AnvilCommandLineProcessor()
       commandLineProcessors = listOf(anvilCommandLineProcessor)
@@ -109,7 +97,7 @@ public class AnvilCompilation internal constructor(
           // println("Lowering language version to 1.9 to support embedded mode")
           // languageVersion = "1.9"
           // apiVersion = "1.9"
-          anvilComponentRegistrar.addCodeGenerators(mode.codeGenerators)
+
           pluginOptions +=
             listOf(
               PluginOption(
@@ -336,21 +324,21 @@ public fun compileAnvil(
 ): JvmCompilationResult {
   val c = AnvilCompilation()
     .apply {
-      kotlinCompilation.apply {
-        this.allWarningsAsErrors = allWarningsAsErrors
-        this.messageOutputStream = messageOutputStream
+      kotlinCompilation.also {
+        it.allWarningsAsErrors = allWarningsAsErrors
+        it.messageOutputStream = messageOutputStream
         if (workingDir != null) {
-          this.workingDir = workingDir
+          it.workingDir = workingDir
         }
         if (moduleName != null) {
-          this.moduleName = moduleName
+          it.moduleName = moduleName
         }
-        apiVersion = "2.0"
-        languageVersion = "2.0"
-        supportsK2 = useK2
-        useKapt4 = useK2
+        it.apiVersion = "2.0"
+        it.languageVersion = "2.0"
+        it.supportsK2 = true
+        it.useKapt4 = true
 
-        verbose = false
+        it.verbose = false
       }
 
       if (jvmTarget != null) {
