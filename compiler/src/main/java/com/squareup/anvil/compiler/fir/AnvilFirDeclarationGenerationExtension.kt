@@ -32,8 +32,8 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
+import org.jetbrains.kotlin.fir.toFirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.constructStarProjectedType
-import org.jetbrains.kotlin.fir.types.toFirResolvedTypeRef
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -134,10 +134,10 @@ public class AnvilFactoryDelegateDeclarationGenerationExtension(session: FirSess
     val matchedClassSymbol =
       session.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
     val function = createMemberFunction(
-      owner,
-      Key,
-      callableId.callableName,
-      matchedClassSymbol.constructStarProjectedType(),
+      owner = owner,
+      key = Key,
+      name = callableId.callableName,
+      returnType = matchedClassSymbol.constructStarProjectedType(),
     )
     return listOf(function.symbol)
   }

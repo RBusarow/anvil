@@ -47,7 +47,7 @@ public class AnvilComponentSubtypeDeclarationGenerationExtension(session: FirSes
   }
 
   override fun hasPackage(packageFqName: FqName): Boolean {
-    error("Why is this never called? $packageFqName")
+    // error("Why is this never called? $packageFqName")
     return packageFqName == Names.foo
   }
 

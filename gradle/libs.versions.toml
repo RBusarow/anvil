@@ -32,7 +32,7 @@ kase = "0.11.1"
 kct = "0.5.1"
 kgx = "0.1.12"
 kotest = "5.9.1"
-kotlin = "2.0.0"
+kotlin = "2.0.20"
 kotlinx-binaryCompatibility = "0.16.2"
 kotlinpoet = "1.18.1"
 # If updating KSP version, we currently have ksp override logic in settings.gradle that needs to be updated too
@@ -116,7 +116,8 @@ kase-gradle-dsl = { module = "com.rickbusarow.kase:kase-gradle-dsl", version.ref
 kotest-assertions-api = { module = "io.kotest:kotest-assertions-api", version.ref = "kotest" }
 kotest-assertions-core-jvm = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 
-kotlin-annotationProcessingEmbeddable = { module = "org.jetbrains.kotlin:kotlin-annotation-processing-embeddable", version.ref = "kotlin" }
+kotlin-kapt-embeddable = { module = "org.jetbrains.kotlin:kotlin-annotation-processing-embeddable", version.ref = "kotlin" }
+kotlin-kapt-compiler = { module = "org.jetbrains.kotlin:kotlin-annotation-processing-compiler", version.ref = "kotlin" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-compileTesting = { module = "dev.zacsweers.kctfork:core", version.ref = "kct" }
 kotlin-compileTesting-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kct" }
@@ -126,6 +127,7 @@ kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 kotlin-gradlePluginApi = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin" }
 kotlin-metadata = "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.9.0"
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-scriptingCompiler = { module = "org.jetbrains.kotlin:kotlin-scripting-compiler", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }

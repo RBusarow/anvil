@@ -5,6 +5,7 @@ import com.squareup.anvil.compiler.fir.internal.classId
 import com.squareup.anvil.compiler.fir.internal.createUserType
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
+import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
@@ -81,6 +82,15 @@ public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
 
     // This should always be true?
     // componentAnnotation as FirAnnotationCall
+
+    /*
+    (classLikeDeclaration.annotations
+      .onEach { requireNotNull(it.id()) }
+      .singleOrNull { it.id() == Names.mergeComponentFir }
+      ?: error("~~~~~~~~~~~~~~ huh? ${classLikeDeclaration.classId.asSingleFqName()}")).replaceAnnotationTypeRef(
+      Names.dagger.component.createUserType(false),
+    )
+     */
 
     classLikeDeclaration.transformAnnotations(
       MyAnnotationTransformer(typeResolver) {

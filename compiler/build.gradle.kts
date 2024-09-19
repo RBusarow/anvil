@@ -34,30 +34,36 @@ publish {
 }
 
 dependencies {
-  implementation(project(":annotations"))
-  implementation(project(":compiler-api"))
-  implementation(project(":compiler-utils"))
-  implementation(platform(libs.kotlin.bom))
-  implementation(libs.dagger2)
-  implementation(libs.jsr250)
-  implementation(libs.kotlin.annotationProcessingEmbeddable)
-  implementation(libs.kotlinpoet)
-  implementation(libs.kotlinpoet.ksp)
+
+  api(libs.dagger2.compiler)
 
   compileOnly(libs.auto.service.annotations)
   compileOnly(libs.kotlin.compiler)
-  compileOnly(libs.ksp.compilerPlugin)
   compileOnly(libs.ksp.api)
+  compileOnly(libs.ksp.compilerPlugin)
+
+  implementation(libs.classgraph)
+  implementation(libs.dagger2)
+  implementation(libs.jsr250)
+  implementation(libs.kotlin.compiler)
+  implementation(libs.kotlin.kapt.compiler)
+  implementation(libs.kotlin.kapt.embeddable)
+  // implementation(libs.kotlin.scriptingCompiler)
+  implementation(libs.kotlinpoet)
+  implementation(libs.kotlinpoet.ksp)
+  implementation(platform(libs.kotlin.bom))
+  implementation(project(":annotations"))
+  implementation(project(":compiler-api"))
+  implementation(project(":compiler-utils"))
 
   kapt(libs.auto.service.processor)
 
-  testImplementation(testFixtures(project(":compiler-utils")))
   testImplementation(libs.dagger2.compiler)
+  testImplementation(testFixtures(project(":compiler-utils")))
   // Force later guava version for Dagger's needs
   testImplementation(libs.guava)
   testImplementation(libs.kase)
   testImplementation(libs.kotest.assertions.core.jvm)
-  testImplementation(libs.kotlin.annotationProcessingEmbeddable)
   testImplementation(libs.kotlin.compileTesting)
   testImplementation(libs.kotlin.compileTesting.ksp)
   testImplementation(libs.kotlin.compiler)

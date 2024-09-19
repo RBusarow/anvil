@@ -15,10 +15,5 @@ public class AnvilCompilerPluginRegistrar : CompilerPluginRegistrar() {
     FirExtensionRegistrarAdapter.registerExtension(AnvilFirExtensionRegistrar())
 
     IrGenerationExtension.registerExtension(CanaryIrMerger())
-
-    // throw AnvilCompilationException(
-    //   registeredExtensions.renderAsDataClassToString()
-    //     .prettyToString(),
-    // )
   }
 }

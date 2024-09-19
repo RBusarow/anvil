@@ -10,7 +10,6 @@ import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Embedde
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode.Ksp
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.PluginOption
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.addPreviousResultToClasspath
 import com.tschuchort.compiletesting.configureKsp
@@ -19,10 +18,10 @@ import dagger.internal.codegen.ComponentProcessor
 import dagger.internal.codegen.KspComponentProcessor
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.config.JvmTarget
+import org.jetbrains.kotlin.kapt3.Kapt3CommandLineProcessor
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Files
-import java.util.Locale
 import java.util.ServiceLoader
 
 /**
@@ -64,33 +63,33 @@ public class AnvilCompilation internal constructor(
       useKapt4 = true
 
       val anvilCommandLineProcessor = AnvilCommandLineProcessor()
-      commandLineProcessors = listOf(anvilCommandLineProcessor)
+      commandLineProcessors = listOf(anvilCommandLineProcessor, Kapt3CommandLineProcessor())
 
       val buildDir = workingDir.resolve("build")
       val anvilCacheDir = buildDir.resolve("anvil-cache")
 
-      pluginOptions = mutableListOf(
-        PluginOption(
-          pluginId = anvilCommandLineProcessor.pluginId,
-          optionName = "disable-component-merging",
-          optionValue = disableComponentMerging.toString(),
-        ),
-        PluginOption(
-          pluginId = anvilCommandLineProcessor.pluginId,
-          optionName = "analysis-backend",
-          optionValue = mode.analysisBackend.name.lowercase(Locale.US),
-        ),
-        PluginOption(
-          pluginId = anvilCommandLineProcessor.pluginId,
-          optionName = "ir-merges-file",
-          optionValue = anvilCacheDir.resolve("merges/ir-merges.txt").absolutePath,
-        ),
-        PluginOption(
-          pluginId = anvilCommandLineProcessor.pluginId,
-          optionName = "track-source-files",
-          optionValue = (trackSourceFiles && mode is Embedded).toString(),
-        ),
-      )
+      // pluginOptions = mutableListOf(
+      //   PluginOption(
+      //     pluginId = anvilCommandLineProcessor.pluginId,
+      //     optionName = "disable-component-merging",
+      //     optionValue = disableComponentMerging.toString(),
+      //   ),
+      //   PluginOption(
+      //     pluginId = anvilCommandLineProcessor.pluginId,
+      //     optionName = "analysis-backend",
+      //     optionValue = mode.analysisBackend.name.lowercase(Locale.US),
+      //   ),
+      //   PluginOption(
+      //     pluginId = anvilCommandLineProcessor.pluginId,
+      //     optionName = "ir-merges-file",
+      //     optionValue = anvilCacheDir.resolve("merges/ir-merges.txt").absolutePath,
+      //   ),
+      //   PluginOption(
+      //     pluginId = anvilCommandLineProcessor.pluginId,
+      //     optionName = "track-source-files",
+      //     optionValue = (trackSourceFiles && mode is Embedded).toString(),
+      //   ),
+      // )
 
       when (mode) {
         is Embedded -> {
@@ -98,44 +97,44 @@ public class AnvilCompilation internal constructor(
           // languageVersion = "1.9"
           // apiVersion = "1.9"
 
-          pluginOptions +=
-            listOf(
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "gradle-project-dir",
-                optionValue = workingDir.absolutePath,
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "gradle-build-dir",
-                optionValue = buildDir.absolutePath,
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "src-gen-dir",
-                optionValue = buildDir.resolve("anvil").absolutePath,
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "anvil-cache-dir",
-                optionValue = anvilCacheDir.absolutePath,
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "generate-dagger-factories",
-                optionValue = generateDaggerFactories.toString(),
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "generate-dagger-factories-only",
-                optionValue = generateDaggerFactoriesOnly.toString(),
-              ),
-              PluginOption(
-                pluginId = anvilCommandLineProcessor.pluginId,
-                optionName = "will-have-dagger-factories",
-                optionValue = (generateDaggerFactories || enableDaggerAnnotationProcessor).toString(),
-              ),
-            )
+          // pluginOptions +=
+          //   listOf(
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "gradle-project-dir",
+          //       optionValue = workingDir.absolutePath,
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "gradle-build-dir",
+          //       optionValue = buildDir.absolutePath,
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "src-gen-dir",
+          //       optionValue = buildDir.resolve("anvil").absolutePath,
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "anvil-cache-dir",
+          //       optionValue = anvilCacheDir.absolutePath,
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "generate-dagger-factories",
+          //       optionValue = generateDaggerFactories.toString(),
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "generate-dagger-factories-only",
+          //       optionValue = generateDaggerFactoriesOnly.toString(),
+          //     ),
+          //     PluginOption(
+          //       pluginId = anvilCommandLineProcessor.pluginId,
+          //       optionName = "will-have-dagger-factories",
+          //       optionValue = (generateDaggerFactories || enableDaggerAnnotationProcessor).toString(),
+          //     ),
+          //   )
         }
 
         is Ksp -> {
@@ -358,8 +357,6 @@ public fun compileAnvil(
       trackSourceFiles = trackSourceFiles,
       mode = mode,
     )
-
-  println(c)
 
   return c.compile(
     *sources,

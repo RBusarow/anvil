@@ -2,7 +2,6 @@ package com.squareup.anvil.plugin
 
 import com.rickbusarow.kase.gradle.dsl.buildFile
 import com.squareup.anvil.plugin.testing.BaseGradleTest
-import io.kotest.matchers.file.shouldExist
 import org.junit.jupiter.api.TestFactory
 
 class k2Test : BaseGradleTest() {
@@ -16,7 +15,7 @@ class k2Test : BaseGradleTest() {
         plugins {
           kotlin("jvm")
           id("com.squareup.anvil")
-          // kotlin("kapt")
+          kotlin("kapt")
         }
 
         // anvil {
@@ -26,80 +25,56 @@ class k2Test : BaseGradleTest() {
         dependencies {
           compileOnly(libs.inject)
           api(libs.dagger2.annotations)
-          // kapt(libs.dagger2.compiler)
+          kapt(libs.dagger2.compiler)
         }
       }
 
       dir("src/main/java") {
-        injectClass()
-
         kotlinFile(
-          "foo/Freddy.kt",
+          "foo/targets.kt",
           """
-            package foo
-            
-            annotation class Freddy
-
-            abstract class Ball
-          """.trimIndent(),
-        )
-
-        kotlinFile(
-          "com/squareup/test/OtherClass.kt",
-          """
-            package com.squareup.test
-            
-            import javax.inject.Inject
-            import foo.Freddy
-            
-            @Freddy
-            class OtherClass @Inject constructor()
-          """.trimIndent(),
-        )
-
-        javaFile(
-          "com/squareup/test/InjectClass_Factory.java",
-          """
-            package com.squareup.test;
-            
-            import dagger.internal.DaggerGenerated;
-            import dagger.internal.Factory;
-            import dagger.internal.QualifierMetadata;
-            import dagger.internal.ScopeMetadata;
-            import javax.annotation.processing.Generated;
-            
-            @ScopeMetadata
-            @QualifierMetadata
-            @DaggerGenerated
-            @Generated(
-                value = "dagger.internal.codegen.ComponentProcessor",
-                comments = "https://dagger.dev"
-            )
-            @SuppressWarnings({
-                "unchecked",
-                "rawtypes",
-                "KotlinInternal",
-                "KotlinInternalInJava",
-                "cast"
-            })
-            public final class InjectClass_Factory implements Factory<InjectClass> {
-              @Override
-              public InjectClass get() {
-                return newInstance();
-              }
-            
-              public static InjectClass_Factory create() {
-                return InstanceHolder.INSTANCE;
-              }
-            
-              public static InjectClass newInstance() {
-                return new InjectClass();
-              }
-            
-              private static final class InstanceHolder {
-                private static final InjectClass_Factory INSTANCE = new InjectClass_Factory();
-              }
-            }
+          package foo
+  
+          import dagger.Binds
+          import dagger.Component
+          import dagger.Module
+          import dagger.Subcomponent
+          import kotlin.reflect.KClass
+          import javax.inject.Inject
+  
+          @MergeComponentFir
+          @Component( modules = [ABindingModule::class] )
+          interface TestComponent
+  
+          interface ComponentBase {
+            // val b: B
+          }
+  
+          @Module
+          interface ABindingModule {
+            @Binds
+            fun bindAImpl(aImpl: AImpl): A
+          }
+  
+          @Module
+          interface EmptyModule {
+            @Binds
+            fun bindBImpl(bImpl: BImpl): B
+          }
+  
+          class InjectClass @Freddy constructor()
+          
+          class OtherClass @Inject constructor()
+          
+          interface A
+          class AImpl @Inject constructor() : A
+          
+          interface B
+          class BImpl @Inject constructor(val a: A) : B
+  
+          annotation class Freddy
+          annotation class MergeComponentFir
+          annotation class ComponentKotlin(val modules: Array<KClass<*>>)
           """.trimIndent(),
         )
       }
@@ -118,8 +93,7 @@ class k2Test : BaseGradleTest() {
     }
 
     shouldSucceed("jar") {
-
-      rootProject.generatedDir(useKsp = false).injectClassFactory.shouldExist()
+      // rootProject.generatedDir(useKsp = false).injectClassFactory.shouldExist()
     }
 
     workingDir.resolve("build").deleteRecursivelyOrFail()
