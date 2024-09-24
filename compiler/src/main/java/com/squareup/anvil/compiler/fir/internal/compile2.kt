@@ -3,24 +3,26 @@ package com.squareup.anvil.compiler.fir.internal
 import com.google.auto.service.AutoService
 import com.squareup.anvil.compiler.fir.AnvilFirExtensionRegistrar
 import dagger.internal.codegen.ComponentProcessor
-import org.jetbrains.kotlin.analysis.utils.relfection.renderAsDataClassToString
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.config.addKotlinSourceRoots
 import org.jetbrains.kotlin.cli.common.environment.setIdeaIoUseFallback
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles.JVM_CONFIG_FILES
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
+import org.jetbrains.kotlin.cli.jvm.compiler.pipeline.compileModulesUsingFrontendIrAndLightTree
+import org.jetbrains.kotlin.cli.jvm.compiler.pipeline.createProjectEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.report
 import org.jetbrains.kotlin.cli.jvm.config.addJavaSourceRoots
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.cli.jvm.config.addJvmSdkRoots
 import org.jetbrains.kotlin.cli.jvm.config.configureJdkClasspathRoots
+import org.jetbrains.kotlin.cli.jvm.configureModuleChunk
 import org.jetbrains.kotlin.cli.jvm.modules.CoreJrtFileSystem
 import org.jetbrains.kotlin.com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
-import org.jetbrains.kotlin.compilerRunner.toArgumentStrings
 import org.jetbrains.kotlin.config.ApiVersion
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -45,20 +47,20 @@ import java.nio.file.Paths
 
 internal fun compile2(sourceFiles: List<File>): Boolean {
 
-  // val messageCollector = PrintingMessageCollector(
-  //   System.out,
-  //   MessageRenderer.PLAIN_RELATIVE_PATHS,
-  //   true,
-  // )
+  val messageCollector = PrintingMessageCollector(
+    System.out,
+    MessageRenderer.PLAIN_RELATIVE_PATHS,
+    true,
+  )
 
-  // val compilerConfiguration = createCompilerConfiguration(
-  //   classpathFiles = HostEnvironment.inheritedClasspath,
-  //   sourceFiles = sourceFiles,
-  //   moduleName = "my-module",
-  //   messageCollector = messageCollector,
-  //   kotlinLanguageVersion = LanguageVersion.KOTLIN_2_0,
-  //   jvmTarget = JvmTarget.JVM_17,
-  // )
+  val compilerConfiguration = createCompilerConfiguration(
+    classpathFiles = HostEnvironment.inheritedClasspath,
+    sourceFiles = sourceFiles,
+    moduleName = "my-module",
+    messageCollector = messageCollector,
+    kotlinLanguageVersion = LanguageVersion.KOTLIN_2_0,
+    jvmTarget = JvmTarget.JVM_17,
+  )
 
   val wd = sourceFiles.first().parentFile.parentFile
 
@@ -74,18 +76,25 @@ internal fun compile2(sourceFiles: List<File>): Boolean {
 
     args.classpath = HostEnvironment.inheritedClasspath
       .filterNot { it.path.contains("kotlin-compile-testing") }
+      .filterNot { it.path.contains("kctfork") }
       .joinToString(File.pathSeparator) { it.absolutePath }
 
     args.pluginClasspaths = HostEnvironment.inheritedClasspath
       .map { it.absolutePath }
-      .plus(getResourcesPath())
+      // .plus(getResourcesPath())
       .filterNot { it.contains("kotlin-compile-testing") }
+      .filterNot { it.contains("kctfork") }
+      // .filterNot { it.contains("org.jetbrains.kotlin/") }
       .toTypedArray()
 
-    args.noReflect = true
-    args.noStdlib = true
+    // the compiler should never look for stdlib or reflect in the
+    // kotlinHome directory (which is null anyway). We will put them
+    // in the classpath manually if they're needed
+    args.noStdlib = false
+    args.noReflect = false
+    args.version = true
 
-    args.compileJava = false
+    args.compileJava = true
     args.jdkHome = System.getProperty("java.home")
     args.jvmTarget = "1.8"
 
@@ -99,52 +108,30 @@ internal fun compile2(sourceFiles: List<File>): Boolean {
     args.disableStandardScript = true
   }
 
-  fun K2JVMCompilerArguments.debugString(): String {
-    val additionalJavaModules = additionalJavaModules?.toList()
-    return renderAsDataClassToString()
-      .replace(":/", "\n  ")
-      .replace(", ", "\n  ")
-      .replace(
-        "additionalJavaModules.*".toRegex(),
-        "additionalJavaModules: $additionalJavaModules",
-      )
-  }
-
-  // error(k2JvmArgs.debugString())
-  /* Work around for warning that sometimes happens:
-  "Failed to initialize native filesystem for Windows
-  java.lang.RuntimeException: Could not find installation home path.
-  Please make sure bin/idea.properties is present in the installation directory"
-  See: https://github.com/arturbosch/detekt/issues/630
-   */
-  withSystemProperty("idea.use.native.fs.for.win", "false") {
-    K2JVMCompiler().exec(
-      System.err,
-      args = k2JvmArgs.toArgumentStrings().toTypedArray(),
-    )
-  }
-
-  return true
-
-  // val projectEnvironment = createProjectEnvironment(
-  //   configuration = compilerConfiguration,
-  //   parentDisposable = { println("yay disposing!") },
-  //   configFiles = JVM_CONFIG_FILES,
-  //   messageCollector = messageCollector,
+  // K2JVMCompiler().exec(
+  //   System.err,
+  //   args = k2JvmArgs.toArgumentStrings().toTypedArray(),
   // )
-  //
-  // val moduleChunk = compilerConfiguration.configureModuleChunk(k2JvmArgs, null)
-  //
-  // return compileModulesUsingFrontendIrAndLightTree(
-  //   projectEnvironment = projectEnvironment,
-  //   compilerConfiguration = compilerConfiguration,
-  //   messageCollector = messageCollector,
-  //   buildFile = null,
-  //   module = moduleChunk.modules.single(),
-  //   targetDescription = "my target",
-  //   checkSourceFiles = true,
-  //   isPrintingVersion = true,
-  // )
+
+  val projectEnvironment = createProjectEnvironment(
+    configuration = compilerConfiguration,
+    parentDisposable = { println("yay disposing!") },
+    configFiles = JVM_CONFIG_FILES,
+    messageCollector = messageCollector,
+  )
+
+  val moduleChunk = compilerConfiguration.configureModuleChunk(k2JvmArgs, null)
+
+  return compileModulesUsingFrontendIrAndLightTree(
+    projectEnvironment = projectEnvironment,
+    compilerConfiguration = compilerConfiguration,
+    messageCollector = messageCollector,
+    buildFile = null,
+    module = moduleChunk.modules.single(),
+    targetDescription = "my target",
+    checkSourceFiles = true,
+    isPrintingVersion = true,
+  )
 }
 
 internal inline fun <T> withSystemProperty(key: String, value: String, f: () -> T): T =

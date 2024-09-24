@@ -37,8 +37,8 @@ dependencies {
 
   api(libs.dagger2.compiler)
 
-  compileOnly(libs.auto.service.annotations)
-  compileOnly(libs.kotlin.compiler)
+  implementation(libs.auto.service.annotations)
+  api(libs.kotlin.compiler)
   compileOnly(libs.ksp.api)
   compileOnly(libs.ksp.compilerPlugin)
 
@@ -46,8 +46,8 @@ dependencies {
   implementation(libs.dagger2)
   implementation(libs.jsr250)
   implementation(libs.kotlin.compiler)
-  implementation(libs.kotlin.kapt.compiler)
-  implementation(libs.kotlin.kapt.embeddable)
+  api(libs.kotlin.kapt.compiler)
+  api(libs.kotlin.kapt.embeddable)
   // implementation(libs.kotlin.scriptingCompiler)
   implementation(libs.kotlinpoet)
   implementation(libs.kotlinpoet.ksp)
