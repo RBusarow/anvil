@@ -59,6 +59,17 @@ class FirCanaryTest : AnvilCompilationModeTest(AnvilCompilationMode.Embedded()) 
     """.trimIndent()
 
   @TestFactory
+  fun `compile2 version canary`() = testFactory {
+
+    compile2(
+      workingDir,
+      listOf(
+        workingDir.resolve("foo/targets.kt").createSafely(targets),
+      ),
+    ) shouldBe true
+  }
+
+  @TestFactory
   fun `kct version canary`() = testFactory {
 
     compile(
@@ -70,15 +81,5 @@ class FirCanaryTest : AnvilCompilationModeTest(AnvilCompilationMode.Embedded()) 
 
       exitCode shouldBe KotlinCompilation.ExitCode.OK
     }
-  }
-
-  @TestFactory
-  fun `compile2 version canary`() = testFactory {
-
-    compile2(
-      listOf(
-        workingDir.resolve("foo/targets.kt").createSafely(targets),
-      ),
-    ) shouldBe true
   }
 }

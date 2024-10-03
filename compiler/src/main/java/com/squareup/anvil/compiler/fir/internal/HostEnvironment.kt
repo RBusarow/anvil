@@ -23,61 +23,98 @@ internal object HostEnvironment {
   )
   val classpath: List<File> get() = inheritedClasspath
 
-  /**  */
-  @Suppress("MagicNumber")
   val allInheritedAnvilProjects: List<File> by lazy {
-    inheritedClasspath.filter { it.isFile && it.extension == "jar" }
+
+    val relativeJarParents = listOf("build", "root-build", "libs")
+
+    inheritedClasspath
+      .filter { it.isFile && it.extension == "jar" }
       .filter {
         // [..., "anvil", "compiler", "build", "included-build", "libs", "compiler-2.5.0-SNAPSHOT.jar"]
-        it.pathSegments
+
+        @Suppress("MagicNumber")
+        val last3Segments = it.pathSegments
           // ["build", "included-build", "libs", "compiler-2.5.0-SNAPSHOT.jar"]
           .takeLast(4)
           // ["build", "included-build", "libs"]
-          .dropLast(1) == listOf("build", "included-build", "libs")
+          .dropLast(1)
+
+        last3Segments == relativeJarParents
       }
   }
 
-  /* */
-  val anvilAnnotations: File by lazy {
-    findInClasspath(module = "annotations")
+  val anvilAnnotations: File by lazy { findInClasspath(".+/anvil/annotations/build/.+".toRegex()) }
+  val anvilCompiler: File by lazy { findInClasspath(".+/anvil/compiler/build/.+".toRegex()) }
+  val anvilCompilerApi: File by lazy { findInClasspath(".+/anvil/compiler-api/build/.+".toRegex()) }
+  val anvilCompilerUtils: File by lazy {
+    findInClasspath(".+/anvil/compiler-utils/build/.+".toRegex())
   }
 
-  /**     */
+  private val jetbrainsKotlin = "org.jetbrains.kotlin"
+  private val jetbrainsKotlinx = "org.jetbrains.kotlinx"
+
+  val intellijCore: File by lazy {
+    findInClasspath(group = "com.jetbrains.intellij.platform", module = "core")
+  }
+
+  val intellijUtil: File by lazy {
+    findInClasspath(group = "com.jetbrains.intellij.platform", module = "util")
+  }
+  val kotlinCompilerEmbeddable: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-compiler-embeddable")
+  }
+  val kotlinScriptingCompilerEmbeddable: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-scripting-compiler-embeddable")
+  }
+  val kotlinScriptingCompiler: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-scripting-compiler")
+  }
+
+  val kotlinAnnotationProcessingEmbeddable: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-annotation-processing-embeddable")
+  }
+
+  val kotlinAnnotationProcessing: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-annotation-processing")
+  }
+
+  val kotlinAnnotationProcessingCompiler: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-annotation-processing-compiler")
+  }
+
   val autoServiceAnnotations: File by lazy {
     findInClasspath(group = "com.google.auto.service", module = "auto-service-annotations")
   }
 
-  /* */
+  val dagger: File by lazy { findInClasspath(group = "com.google.dagger", module = "dagger") }
+  val daggerCompiler: File by lazy {
+    findInClasspath(group = "com.google.dagger", module = "dagger-compiler")
+  }
+
   val javaxInject: File by lazy {
     findInClasspath(group = "javax.inject", module = "javax.inject")
   }
 
-  /**     */
-  val clikt: File by lazy {
-    findInClasspath(group = "com.github.ajalt.clikt", module = "clikt-jvm")
-  }
-
-  /* */
-  val okioJvm: File by lazy {
-    findInClasspath(group = "com.squareup.okio", module = "okio-jvm")
-  }
-
-  /**     */
   val kotlinxSerializationCoreJvm: File by lazy {
-    findInClasspath(group = "org.jetbrains.kotlinx", module = "kotlinx-serialization-core-jvm")
+    findInClasspath(group = jetbrainsKotlinx, module = "kotlinx-serialization-core-jvm")
   }
 
-  /* */
-  val kotlinStdLibJar: File by lazy {
-    findInClasspath(kotlinDependencyRegex("(kotlin-stdlib|kotlin-runtime)"))
+  val jetbrainsAnnotations: File by lazy {
+    findInClasspath(group = "org.jetbrains", module = "annotations")
   }
 
-  /* */
+  val kotlinStdLib: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-stdlib")
+  }
+
+  val kotlinReflect: File by lazy {
+    findInClasspath(group = jetbrainsKotlin, module = "kotlin-reflect")
+  }
+
   val kotlinStdLibCommonJar: File by lazy {
     findInClasspath(kotlinDependencyRegex("kotlin-stdlib-common"))
   }
 
-  /* */
   val kotlinStdLibJdkJar: File by lazy {
     findInClasspath(kotlinDependencyRegex("kotlin-stdlib-jdk[0-9]+"))
   }
@@ -87,14 +124,12 @@ internal object HostEnvironment {
   }
 
   /** Tries to find a file matching the given [regex] in the host process' classpath. */
-  fun findInClasspath(regex: Regex): File {
-    return inheritedClasspath
-      .firstOrNull { classpath -> classpath.name.matches(regex) }
-      .requireNotNull { "could not find classpath file via regex: $regex" }
-  }
+  private fun findInClasspath(regex: Regex): File = inheritedClasspath
+    .firstOrNull { classpath -> classpath.path.matches(regex) }
+    .requireNotNull { "could not find classpath file via regex: $regex" }
 
   /** Tries to find a .jar file given pieces of its maven coordinates */
-  fun findInClasspath(
+  private fun findInClasspath(
     group: String? = null,
     module: String? = null,
     version: String? = null,

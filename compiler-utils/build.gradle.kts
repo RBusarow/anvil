@@ -24,7 +24,7 @@ publish {
 dependencies {
   api(project(":annotations"))
   api(project(":compiler-api"))
-  api(libs.kotlin.compiler)
+  api(libs.kotlin.compiler.embeddable)
   api(libs.kotlinpoet)
 
   implementation(platform(libs.kotlin.bom))

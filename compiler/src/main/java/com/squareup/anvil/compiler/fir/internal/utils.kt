@@ -44,9 +44,7 @@ internal fun FirRegularClassSymbol.toKClassRef(): ConeClassLikeType =
   )
 
 internal fun FirRegularClassSymbol.resolvedTypeRef(): FirResolvedTypeRef {
-  return buildResolvedTypeRef {
-    type = toKClassRef()
-  }
+  return buildResolvedTypeRef { type = toKClassRef() }
 }
 
 internal fun FqName.createUserType(nullable: Boolean = false): FirUserTypeRef {

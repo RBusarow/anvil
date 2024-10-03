@@ -83,16 +83,19 @@ class k2Test : BaseGradleTest() {
           org.gradle.caching=false
           com.squareup.anvil.trackSourceFiles=true
           kapt.use.k2=true
+          kapt.verbose=true
+          kotlin.verbose=true
 
           # Enable compilation of project using FIR compiler
           kotlin.build.useFir=true
           # Enable FIR compiler for kotlin-stdlib, kotlin-reflect, kotlin-test.
           kotlin.build.useFirForLibraries=true
+
         """.trimIndent(),
       )
     }
 
-    shouldSucceed("jar") {
+    shouldSucceed("jar", "--info") {
       // rootProject.generatedDir(useKsp = false).injectClassFactory.shouldExist()
     }
 

@@ -54,6 +54,13 @@ public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
 
     val supertypeUserType = Names.componentBase.createUserType()
 
+    if (resolvedSupertypes.any {
+        it.coneType.classId?.asFqNameString() == Names.componentBase.asString()
+      }
+    ) {
+      return emptyList()
+    }
+
     fun FirTypeRef.userType() = buildUserTypeFromQualifierParts(
       isMarkedNullable = isMarkedNullable ?: false,
     ) {
@@ -61,11 +68,11 @@ public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
     }
 
     fun FirAnnotation.id(): FqName? = when (val t = this.annotationTypeRef) {
-      is FirResolvedTypeRef -> t.type.classId?.asSingleFqName()
+      is FirResolvedTypeRef -> t.coneType.classId?.asSingleFqName()
       is FirUserTypeRef ->
         typeResolver
           .resolveUserType(type = t)
-          .type
+          .coneType
           .classId
           ?.asSingleFqName()
       else -> error("~~~~~~~~~~~~~~ huh? $t")
@@ -122,6 +129,20 @@ public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
     // }
 
     val superResolved = typeResolver.resolveUserType(supertypeUserType)
+
+    check(!resolvedSupertypes.contains(superResolved)) {
+      "Supertype $supertypeUserType is already present in $resolvedSupertypes"
+    }
+
+    if (resolvedSupertypes.any { !it.coneType.toString().contains("Any") }) {
+      error(
+        """
+      |--------------------------- ${classLikeDeclaration.classId.asFqNameString()}  supertypes
+      |${resolvedSupertypes.joinToString("\n") { it.coneType.classId?.asFqNameString() ?: "null" }}
+      |---------------------------
+        """.trimMargin(),
+      )
+    }
 
     return listOf(superResolved)
   }

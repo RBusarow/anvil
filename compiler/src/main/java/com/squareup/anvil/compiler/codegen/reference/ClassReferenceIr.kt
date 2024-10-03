@@ -20,19 +20,21 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import kotlin.LazyThreadSafetyMode.NONE
 
+@OptIn(UnsafeDuringIrConstructionAPI::class)
 internal class ClassReferenceIr(
   val clazz: IrClassSymbol,
   val context: IrPluginContext,
 ) : AnnotatedReferenceIr {
+
   val fqName: FqName = clazz.fqName
-  @UnsafeDuringIrConstructionAPI
+
   val packageFqName: FqName? = clazz.owner.packageFqName
+
   val classId: ClassId = clazz.requireClassId()
 
   val shortName: String
     get() = fqName.shortName().asString()
 
-  @UnsafeDuringIrConstructionAPI
   val enclosingClassesWithSelf: List<ClassReferenceIr> by lazy {
     clazz.owner.parents
       .filterIsInstance<IrClass>()
@@ -42,13 +44,10 @@ internal class ClassReferenceIr(
       .plus(this)
   }
 
-  @UnsafeDuringIrConstructionAPI
   val isInterface: Boolean = clazz.owner.isInterface
 
-  @UnsafeDuringIrConstructionAPI
   val visibility: Visibility = parseVisibility()
 
-  @UnsafeDuringIrConstructionAPI
   private fun parseVisibility(): Visibility {
     return when (clazz.owner.visibility) {
       DescriptorVisibilities.PUBLIC -> PUBLIC
@@ -62,7 +61,6 @@ internal class ClassReferenceIr(
     }
   }
 
-  @UnsafeDuringIrConstructionAPI
   override val annotations: List<AnnotationReferenceIr> by lazy(NONE) {
     clazz.owner.annotations.map { it.toAnnotationReference(context, this) }
   }
@@ -87,7 +85,6 @@ internal class ClassReferenceIr(
 
 internal fun IrClassSymbol.toClassReference(context: IrPluginContext) =
   ClassReferenceIr(this, context)
-
 
 @UnsafeDuringIrConstructionAPI
 @Suppress("FunctionName")

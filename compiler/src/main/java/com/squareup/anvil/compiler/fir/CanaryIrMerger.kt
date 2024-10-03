@@ -63,9 +63,9 @@ public class CanaryIrMerger : IrGenerationExtension {
 
           // error(
           //   """
-          //    |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ IR TestComponent modules args
-          //    |$modulesArgBlob
-          //    |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          //   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ IR TestComponent modules args
+          //   |$modulesArgBlob
+          //   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           //   """.trimMargin(),
           // )
 

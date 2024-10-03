@@ -50,8 +50,8 @@ internal class MyAnnotationTransformer(
     // typeResolver.resolveUserType(annotationCall.annotationTypeRef)
 
     val annotationFqName = when (val tr = annotationCall.annotationTypeRef) {
-      is FirUserTypeRef -> typeResolver.resolveUserType(tr).type
-      is FirResolvedTypeRef -> tr.type
+      is FirUserTypeRef -> typeResolver.resolveUserType(tr).coneType
+      is FirResolvedTypeRef -> tr.coneType
       is FirImplicitTypeRef -> tr.coneType
       is FirTypeRefWithNullability -> tr.coneType
     }.classId!!.asSingleFqName()

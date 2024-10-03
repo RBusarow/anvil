@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.fir.symbols.impl.FirConstructorSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.toFirResolvedTypeRef
+import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.types.constructStarProjectedType
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
@@ -103,7 +104,7 @@ public class AnvilFactoryDelegateDeclarationGenerationExtension(session: FirSess
         isPrimary = true,
         generateDelegatedNoArgConstructorCall = true,
       ) {
-        valueParameter(Name.identifier("thing"), session.builtinTypes.stringType.type)
+        valueParameter(Name.identifier("thing"), session.builtinTypes.stringType.coneType)
       }
         .apply {
           replaceAnnotations(
