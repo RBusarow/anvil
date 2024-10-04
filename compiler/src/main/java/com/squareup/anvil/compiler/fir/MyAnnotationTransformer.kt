@@ -33,7 +33,9 @@ internal class MyAnnotationTransformer(
 ) : FirDefaultTransformer<Unit>() {
   private val mergedModules: List<FirRegularClassSymbol> by lazy(mergedModules)
 
-  override fun <E : FirElement> transformElement(element: E, data: Unit): E = element
+  override fun <E : FirElement> transformElement(element: E, data: Unit): E {
+    return element
+  }
 
   override fun transformAnnotation(annotation: FirAnnotation, data: Unit): FirStatement {
     error("transformAnnotation -- $annotation")
@@ -88,6 +90,20 @@ internal class MyAnnotationTransformer(
     // }
     // oldModules.transformChildren(Butt(), null)
 
+    // buildAnnotationCall {
+    //   buildArgumentList {
+    //     source = oldArrayArgs.source?.fakeElement(KtFakeSourceElementKind.PluginGenerated)
+    //     arguments += oldArrayArgs.arguments
+    //
+    //     arguments += mergedModules.map { moduleSymbol ->
+    //       buildGetClassClass(moduleSymbol)
+    //     }
+    //   },
+    // }
+
+    (oldModules as? FirLazyExpression)?.let { lz ->
+    }
+
     oldModules.transformChildren { element ->
       val oldModulesArray = element as? FirArrayLiteral
         ?: return@transformChildren element
@@ -108,26 +124,22 @@ internal class MyAnnotationTransformer(
       oldModulesArray
     }
 
-    return super.transformAnnotationCall(annotationCall, data)
-
-    // oldModules.transformChildren { ele ->
+    // (oldModules as FirNamedArgumentExpression).let { oldModulesExpression ->
+    //   (oldModulesExpression.expression as FirArrayLiteral).let { oldModulesArray ->
+    //     val oldArrayArgs = oldModulesArray.argumentList
+    //
+    //     oldModulesArray.replaceArgumentList(
+    //       buildArgumentList {
+    //         source = oldArrayArgs.source?.fakeElement(KtFakeSourceElementKind.PluginGenerated)
+    //         arguments += oldArrayArgs.arguments
+    //
+    //         arguments += mergedModules.map { moduleSymbol ->
+    //           buildGetClassClass(moduleSymbol)
+    //         }
+    //       },
+    //     )
+    //   }
     // }
-
-    oldModules as FirNamedArgumentExpression
-
-    val oldModulesArray = oldModules.expression as FirArrayLiteral
-    val oldArrayArgs = oldModulesArray.argumentList
-
-    oldModulesArray.replaceArgumentList(
-      buildArgumentList {
-        source = oldArrayArgs.source?.fakeElement(KtFakeSourceElementKind.PluginGenerated)
-        arguments += oldArrayArgs.arguments
-
-        arguments += mergedModules.map { moduleSymbol ->
-          buildGetClassClass(moduleSymbol)
-        }
-      },
-    )
 
     return super.transformAnnotationCall(annotationCall, data)
   }

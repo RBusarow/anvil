@@ -1,5 +1,7 @@
 package com.squareup.anvil.compiler.fir.internal
 
+import com.squareup.anvil.compiler.anvilVersion
+import com.squareup.anvil.compiler.fir.internal.HostEnvironment.inheritedClasspath
 import io.github.classgraph.ClassGraph
 import java.io.File
 import kotlin.contracts.ExperimentalContracts
@@ -43,12 +45,15 @@ internal object HostEnvironment {
       }
   }
 
-  val anvilAnnotations: File by lazy { findInClasspath(".+/anvil/annotations/build/.+".toRegex()) }
-  val anvilCompiler: File by lazy { findInClasspath(".+/anvil/compiler/build/.+".toRegex()) }
-  val anvilCompilerApi: File by lazy { findInClasspath(".+/anvil/compiler-api/build/.+".toRegex()) }
-  val anvilCompilerUtils: File by lazy {
-    findInClasspath(".+/anvil/compiler-utils/build/.+".toRegex())
+  private fun anvilModuleJar(moduleName: String): File {
+    return findInClasspath(".+build/libs/$moduleName-${anvilVersion}\\.jar".toRegex())
   }
+
+  val anvilAnnotations: File by lazy { anvilModuleJar("annotations") }
+  val anvilAnnotationsOptional: File by lazy { anvilModuleJar("annotations-optional") }
+  val anvilCompiler: File by lazy { anvilModuleJar("compiler") }
+  val anvilCompilerApi: File by lazy { anvilModuleJar("compiler-api") }
+  val anvilCompilerUtils: File by lazy { anvilModuleJar("compiler-utils") }
 
   private val jetbrainsKotlin = "org.jetbrains.kotlin"
   private val jetbrainsKotlinx = "org.jetbrains.kotlinx"
@@ -93,6 +98,9 @@ internal object HostEnvironment {
 
   val javaxInject: File by lazy {
     findInClasspath(group = "javax.inject", module = "javax.inject")
+  }
+  val jakartaInject: File by lazy {
+    findInClasspath(group = "jakarta.inject", module = "jakarta.inject-api")
   }
 
   val kotlinxSerializationCoreJvm: File by lazy {

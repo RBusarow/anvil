@@ -5,6 +5,8 @@ plugins {
   alias(libs.plugins.buildconfig)
 }
 
+val VERSION_NAME: String by project
+
 buildConfig {
   className("BuildProperties")
   packageName("com.squareup.anvil.compiler")
@@ -12,6 +14,7 @@ buildConfig {
 
   buildConfigField("boolean", "FULL_TEST_RUN", libs.versions.config.fullTestRun.get())
   buildConfigField("boolean", "INCLUDE_KSP_TESTS", libs.versions.config.includeKspTests.get())
+  buildConfigField("anvilVersion", VERSION_NAME)
 }
 
 conventions {

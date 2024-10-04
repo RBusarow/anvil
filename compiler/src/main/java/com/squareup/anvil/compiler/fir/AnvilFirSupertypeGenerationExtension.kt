@@ -4,9 +4,11 @@ import com.squareup.anvil.compiler.fir.internal.Names
 import com.squareup.anvil.compiler.fir.internal.classId
 import com.squareup.anvil.compiler.fir.internal.createUserType
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.analysis.checkers.PsiSourceNavigator.psi
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.expressions.FirAnnotation
+import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.buildUserTypeFromQualifierParts
@@ -21,6 +23,8 @@ import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.types.isMarkedNullable
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.psi
+import org.jetbrains.kotlin.psi.psiUtil.astReplace
 import org.jetbrains.kotlin.util.PrivateForInline
 
 public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
@@ -99,16 +103,35 @@ public class AnvilFirSupertypeGenerationExtension(session: FirSession) :
     )
      */
 
+    val componentAnnotation = classLikeDeclaration.annotations
+      .single { it.id() == Names.mergeComponentFir }
+      as FirAnnotationCall
+
+    classLikeDeclaration.symbol
+      .annotations
+      .forEach { firAnnotation ->
+        (firAnnotation as FirAnnotationCall).argumentList
+          .arguments
+          .forEach { classListArg ->
+            classListArg
+              .source?.psi?.astReplace(TODO())
+          }
+      }
+
     classLikeDeclaration.transformAnnotations(
-      MyAnnotationTransformer(typeResolver) {
-        listOf(
-          session.symbolProvider
-            .getClassLikeSymbolByClassId(Names.emptyModule.classId()) as FirRegularClassSymbol,
-        )
-      },
+      MyAnnotationTransformer(
+        typeResolver = typeResolver,
+        mergedModules = {
+          listOf(
+            session.symbolProvider
+              .getClassLikeSymbolByClassId(
+                Names.emptyModule.classId(),
+              ) as FirRegularClassSymbol,
+          )
+        },
+      ),
       Unit,
     )
-
     // classLikeDeclaration.replaceAnnotations(
     //   classLikeDeclaration.annotations
     //     .filterNot { it == componentAnnotation } +

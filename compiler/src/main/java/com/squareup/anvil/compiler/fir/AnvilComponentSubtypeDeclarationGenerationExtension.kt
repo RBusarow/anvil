@@ -86,7 +86,7 @@ public class AnvilComponentSubtypeDeclarationGenerationExtension(session: FirSes
       // )
     }
       .apply {
-        addMergedComponentAnnotation(session)
+        addMergedComponentAnnotation(session, TODO())
       }
     return newSubtype.symbol
   }
