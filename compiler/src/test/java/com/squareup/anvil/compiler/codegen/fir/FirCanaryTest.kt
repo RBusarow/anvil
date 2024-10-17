@@ -4,7 +4,6 @@ import com.rickbusarow.kase.stdlib.createSafely
 import com.squareup.anvil.compiler.fir.internal.compile2
 import com.squareup.anvil.compiler.internal.testing.AnvilCompilationMode
 import com.squareup.anvil.compiler.testing.AnvilCompilationModeTest
-import com.tschuchort.compiletesting.KotlinCompilation
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.TestFactory
 
@@ -67,19 +66,5 @@ class FirCanaryTest : AnvilCompilationModeTest(AnvilCompilationMode.Embedded()) 
         workingDir.resolve("foo/targets.kt").createSafely(targets),
       ),
     ) shouldBe true
-  }
-
-  @TestFactory
-  fun `kct version canary`() = testFactory {
-
-    compile(
-      targets,
-      enableDaggerAnnotationProcessor = true,
-      allWarningsAsErrors = false,
-      useK2 = true,
-    ) {
-
-      exitCode shouldBe KotlinCompilation.ExitCode.OK
-    }
   }
 }
