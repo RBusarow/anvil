@@ -40,16 +40,8 @@ dependencies {
 
   api(libs.dagger2.compiler)
   api(libs.intellij.core)
-  // api(libs.intellij.core.impl) {
-  //   because(
-  //     "the unshaded `com.intellij.mock.MockProject` is referenced by `Kapt3ComponentRegistrar`",
-  //   )
-  // }
   api(libs.intellij.util)
-  // api(libs.kotlin.annotation.processing)
-  // api(libs.kotlin.annotation.processing.compiler)
   api(libs.kotlin.annotation.processing.embeddable)
-  // api(libs.kotlin.annotation.processing.runtime)
   api(libs.kotlin.compiler.embeddable)
   api(libs.kotlin.metadata.jvm)
   api(libs.kotlin.scripting.compiler.embeddable)
