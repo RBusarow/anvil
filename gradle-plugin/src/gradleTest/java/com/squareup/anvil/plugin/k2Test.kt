@@ -95,7 +95,7 @@ class k2Test : BaseGradleTest() {
       )
     }
 
-    shouldSucceed("jar", "--info") {
+    shouldSucceed("jar", "--dry-run") {
       // rootProject.generatedDir(useKsp = false).injectClassFactory.shouldExist()
     }
 

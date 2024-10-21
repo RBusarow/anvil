@@ -39,8 +39,8 @@ publish {
 dependencies {
 
   api(libs.dagger2.compiler)
-  api(libs.intellij.core)
-  api(libs.intellij.util)
+  // api(libs.intellij.core)
+  // api(libs.intellij.util)
   api(libs.kotlin.annotation.processing.embeddable)
   api(libs.kotlin.compiler.embeddable)
   api(libs.kotlin.metadata.jvm)

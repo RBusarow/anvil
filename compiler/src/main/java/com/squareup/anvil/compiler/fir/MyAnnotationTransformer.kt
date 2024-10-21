@@ -13,9 +13,7 @@ import org.jetbrains.kotlin.fir.expressions.FirArrayLiteral
 import org.jetbrains.kotlin.fir.expressions.FirLazyExpression
 import org.jetbrains.kotlin.fir.expressions.FirNamedArgumentExpression
 import org.jetbrains.kotlin.fir.expressions.FirStatement
-import org.jetbrains.kotlin.fir.expressions.FirVarargArgumentsExpression
 import org.jetbrains.kotlin.fir.expressions.UnresolvedExpressionTypeAccess
-import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationCopy
 import org.jetbrains.kotlin.fir.expressions.builder.buildArgumentList
 import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension.TypeResolveService
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
@@ -27,7 +25,6 @@ import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.coneType
 import org.jetbrains.kotlin.fir.visitors.FirDefaultTransformer
 import org.jetbrains.kotlin.fir.visitors.FirTransformer
-import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.text
 
 internal class MyAnnotationTransformer(
@@ -85,38 +82,38 @@ internal class MyAnnotationTransformer(
         }
       }
 
-    return buildAnnotationCopy(annotationCall) {
-      buildArgumentList {
-
-        val oldClassListArg = annotationArgsListOld.arguments.single()
-          .acceptChildren(
-            object : FirVisitorVoid() {
-              override fun visitElement(element: FirElement) {
-                element.acceptChildren(this)
-              }
-
-              override fun visitVarargArgumentsExpression(
-                varargArgumentsExpression: FirVarargArgumentsExpression,
-              ) {
-                println("visitVarargArgumentsExpression -- $varargArgumentsExpression")
-                super.visitVarargArgumentsExpression(varargArgumentsExpression)
-              }
-
-              override fun visitArgumentList(argumentList: FirArgumentList) {
-                println("visitArgumentList -- $argumentList")
-                super.visitArgumentList(argumentList)
-              }
-            },
-          )
-
-        source = oldModules.source?.fakeElement(KtFakeSourceElementKind.PluginGenerated)
-        // arguments += oldModules.arguments
-
-        arguments += mergedModules.map { moduleSymbol ->
-          buildGetClassClass(moduleSymbol)
-        }
-      }
-    }
+    // return buildAnnotationCopy(annotationCall) {
+    //   buildArgumentList {
+    //
+    //     val oldClassListArg = annotationArgsListOld.arguments.single()
+    //       .acceptChildren(
+    //         object : FirVisitorVoid() {
+    //           override fun visitElement(element: FirElement) {
+    //             element.acceptChildren(this)
+    //           }
+    //
+    //           override fun visitVarargArgumentsExpression(
+    //             varargArgumentsExpression: FirVarargArgumentsExpression,
+    //           ) {
+    //             println("visitVarargArgumentsExpression -- $varargArgumentsExpression")
+    //             super.visitVarargArgumentsExpression(varargArgumentsExpression)
+    //           }
+    //
+    //           override fun visitArgumentList(argumentList: FirArgumentList) {
+    //             println("visitArgumentList -- $argumentList")
+    //             super.visitArgumentList(argumentList)
+    //           }
+    //         },
+    //       )
+    //
+    //     source = oldModules.source?.fakeElement(KtFakeSourceElementKind.PluginGenerated)
+    //     // arguments += oldModules.arguments
+    //
+    //     arguments += mergedModules.map { moduleSymbol ->
+    //       buildGetClassClass(moduleSymbol)
+    //     }
+    //   }
+    // }
 
     // class Butt : FirTransformer<Nothing?>() {
     //   override fun <E : FirElement> transformElement(element: E, data: Nothing?): E {
